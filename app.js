@@ -4,14 +4,14 @@ var mysql = require("mysql");
 var bodyParser = require("body-parser");
 var http = require('http');
 
-
+console.log("AQUI ESTOY");
 var connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '',
     database: 'bdcs'
 });
-
+console.log("AQUI ESTOY");
 
 
 var app = express();
