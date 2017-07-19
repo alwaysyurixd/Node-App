@@ -5,12 +5,17 @@ var bodyParser = require("body-parser");
 
 
 
-
+var connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'bdcs'
+});
 
 
 
 var app = express();
-
+app.set('port', process.env.PORT || 3000);
 app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // to support URL-encoded bodies
 
