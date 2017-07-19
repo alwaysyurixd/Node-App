@@ -6,19 +6,15 @@ var http = require('http');
 
 console.log("AQUI ESTOY");
 var connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'bdcs'
+    host: 'us-cdbr-azure-east-c.cloudapp.net',
+    user: 'b198c261d4e6a6',
+    password: '2495ab60',
+    database: 'bdcs',
+    port: 3306
 });
+
 console.log("AQUI ESTOY");
-var del = connection._protocol._delegateError;
-connection._protocol._delegateError = function(err, sequence){
-  if (err.fatal) {
-    console.trace('fatal error: ' + err.message);
-  }
-  return del.call(this, err, sequence);
-};
+
 
 var app = express();
 app.set('port', process.env.PORT || 3000);
