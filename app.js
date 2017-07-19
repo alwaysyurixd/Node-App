@@ -2,7 +2,7 @@
 var express = require("express");
 var mysql = require("mysql");
 var bodyParser = require("body-parser");
-
+var http = require('http');
 
 
 var connection = mysql.createConnection({
@@ -42,6 +42,9 @@ app.get("/", function(req, res) {
 
         res.send(response);
     });
+});
+http.createServer(app).listen(app.get('port'), function(){
+  console.log('Express server listening on port ' + app.get('port'));
 });
 console.log("AQUI ESTOY");
 app.post("/search", function(req, res) {
