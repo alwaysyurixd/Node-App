@@ -1,25 +1,25 @@
-﻿var express = require("express");
+var express = require("express");
 var mysql = require("mysql");
 var bodyParser = require("body-parser");
-var http=require('http');
+var http = require("http")
 
 var connection = mysql.createConnection({
-    host: 'us-cdbr-azure-east-c.cloudapp.net',
-    user: 'b198c261d4e6a6',
-    password: '2495ab60',
+    host: 'bdcsserver.mysql.database.azure.com',
+    user: 'adminserver@bdcsserver',
+    password: 'Admin123',
     database: 'bdcs',
-    port: 3306
+    port: 3306,
 });
 
 var app = express();
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.Port || 3000);
+
 app.use(bodyParser.json()); // to support JSON-encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // to support URL-encoded bodies
 
 var GCM = require('./gcm.js');
 var gcm = new GCM('AIzaSyCQYD3Npron6xO4PiaseIjKcGo1Mje9IXw');
 global.gcm = gcm;
-
 
 app.get("/", function(req, res) {
     var response = {};
@@ -42,11 +42,6 @@ app.get("/", function(req, res) {
     });
 });
 
-http.createServer(app).listen(app.get('port'), function(){
-   console.log('Express server listening on port ' + app.get('port'));
-});
-console.log("AQUI ESTOY");
-
 app.post("/search", function(req, res) {
     var response = {};
     response.code = "fail";
@@ -63,7 +58,6 @@ app.post("/search", function(req, res) {
                 response.data.push({ username: rows[i].username, password: rows[i].password });
             }
         }
-
         res.send(response);
     });
 });
@@ -242,6 +236,29 @@ app.post("/store/empleado/listaempleado", function(req, res) {
     });
 });
 
+app.post("/store/empleado/listaTecnico", function(req, res) {
+    var response = {};
+    response.code = "fail";
+    response.error = "";
+    response.data = [];
+
+    //Cada '=?' es para ingresar un parámetro 
+    data = connection.query("SELECT P.nombres as nombres, P.apellidos as apellidos, sum(AE.Cantidad) as cantidad, EQ.descripcion as descripcion from equipo EQ inner join abastecimientoequipo AE on AE.IdEquipo = EQ.id inner join abastecimiento AB on AB.idAbastecimiento = AE.idAbastecimiento inner join almacen A on A.idAlmacen = AB.idAlmacen inner join empleado E on E.idEmpleado = A.IdEmpleado inner join persona P on P.idPersona = E.idPersona where E.cargo='Tecnico' group by P.nombres, P.apellidos", function(error, rows, fields) {
+        if (!!error || rows.length < 1) {
+            response.error = error;
+            console.log("Error in query");
+        } else {
+            response.code = "ok";
+            console.log(rows.length);
+            for (var i = 0; i < rows.length; i++) {
+                //Agrega cada fila al array data de response
+                response.data.push({ nombres: rows[i].nombres, apellidos: rows[i].apellidos, descripcion: rows[i].descripcion, cantidad: rows[i].cantidad });
+            }
+        }
+        res.send(response);
+    });
+});
+
 app.post("/store/lote/registro", function(req, res) {
     var response = {};
     response.code = "fail";
@@ -249,7 +266,7 @@ app.post("/store/lote/registro", function(req, res) {
     response.data = [];
 
     //Cada '=?' es para ingresar un parámetro 
-    data = connection.query("INSERT INTO lote ( codigo) VALUES ('" + req.body.codigo + "')", function(error, rows, fields) {;
+    data = connection.query("INSERT INTO lote (codigo) VALUES ('" + req.body.codigo + "')", function(error, rows, fields) {;
         if (!!error || rows.length < 1) {
             response.error = error;
             console.log("Error in query" + error.message);
@@ -291,14 +308,15 @@ app.post("/store/lote/listar", function(req, res) {
 app.post("/control/supervisor/reporte/servicio", function(req, res) {
     var response = {};
     response.code = "fail";
+    response.stadistics = {};
     response.error = "";
     response.data = [];
 
     //Cada '=?' es para ingresar un parámetro 
-    data = connection.query("SELECT DISTINT CONCAT(P.apellidos,' ',P.nombres) AS tecnico , COUNT(S.idServicio) as cantidad FROM PERSONA P INNER JOIN EMPLEADO E ON P.idPersona = E.idPersona INNER JOIN SERVICIO S ON S.idEmpleado=E.idEmpleado GROUP BY E.idEmpleado", function(error, rows, fields) {
+    data = connection.query("SELECT CONCAT(P.apellidos,' ',P.nombres) as tecnico, COUNT(S.idServicio) as cantidad FROM PERSONA P INNER JOIN EMPLEADO E ON P.idPersona = E.idPersona INNER JOIN SERVICIO S ON S.idEmpleado=E.idEmpleado GROUP BY E.idEmpleado", function(error, rows, fields) {
         if (!!error || rows.length < 1) {
             response.error = error;
-            console.log("Error in query " + error.message);
+            console.log("Error in query");
         } else {
             response.code = "ok";
             console.log(rows.length);
@@ -320,7 +338,6 @@ app.post("/notify/send", function(req, res) {
     ids = [];
     //ids.push(req.body.token1);
     //ids.push(req.body.token2);
-
 
     data = connection.query("SELECT usuario, token FROM usuario ", function(error, rows, fields) {
         if (!!error || rows.length < 1) {
@@ -349,10 +366,8 @@ app.post("/notify/send", function(req, res) {
                     name: req.body.name.toString()
                 }
             };
-
             gcm.send(msg, function(err, respons) {
                 console.log("Mensaje: ", msg);
-
                 response.stadistics = {};
                 stadistics = {
                         success: respons.success,
@@ -363,16 +378,12 @@ app.post("/notify/send", function(req, res) {
                     response.stadistics.failrure = "";
                     response.stadistics.failrure= respons.failrure;    */
                 response.stadistics = stadistics;
-
-
                 console.log("-----------------------------");
                 console.log("RESPONSE: ", respons);
                 console.log("RESPONSE: ", response.stadistics);
                 res.send(response);
             });
-
         }
-
         //res.send(response);
     });
 });
@@ -480,7 +491,7 @@ app.post("/store/equipo/search", function(req, res) {
     response.data = [];
 
     //Cada '=?' es para ingresar un parámetro 
-    data = connection.query("SELECT id, stock, codigoSAP, descripcion FROM equipo WHERE codigoSAP LIKE ? OR descripcion LIKE ?", ['%' + req.body.equipo, '%' + req.body.equipo + '%'], function(error, rows, fields) {
+    data = connection.query("SELECT id, stock, codigoSAP, descripcion FROM equipo WHERE codigoSAP LIKE ? OR descripcion LIKE ?", ['%' + req.body.codigoSAP, '%' + req.body.descripcion + '%'], function(error, rows, fields) {
         if (!!error || rows.length < 1) {
             response.error = error;
             console.log("Error in query");
@@ -490,6 +501,29 @@ app.post("/store/equipo/search", function(req, res) {
             for (var i = 0; i < rows.length; i++) {
                 //Agrega cada fila al array data de response
                 response.data.push({ id: rows[i].id, stock: rows[i].stock, codigoSAP: rows[i].codigoSAP, descripcion: rows[i].descripcion });
+            }
+        }
+        res.send(response);
+    });
+});
+
+app.post("/store/empleado/search", function(req, res) {
+    var response = {};
+    response.code = "fail";
+    response.error = "";
+    response.data = [];
+
+    //Cada '=?' es para ingresar un parámetro 
+    data = connection.query("SELECT E.idEmpleado as id, P.apellidos as apellidos, P.nombres as nombres FROM empleado E inner join persona P on P.idPersona = E.idEmpleado WHERE P.apellidos LIKE ? and E.cargo = 'Tecnico'", ['%' + req.body.apellidos + '%'], function(error, rows, fields) {
+        if (!!error || rows.length < 1) {
+            response.error = error;
+            console.log("Error in query");
+        } else {
+            response.code = "ok";
+            console.log(rows.length);
+            for (var i = 0; i < rows.length; i++) {
+                //Agrega cada fila al array data de response
+                response.data.push({ id: rows[i].id, apellidos: rows[i].apellidos, nombres: rows[i].nombres });
             }
         }
         res.send(response);
