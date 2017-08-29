@@ -9,6 +9,7 @@ var connection = mysql.createConnection({
     password: 'Admin123',
     database: 'bdcs',
     port: 3306,
+    ssl: true
 });
 
 var app = express();
@@ -42,8 +43,6 @@ app.get("/", function(req, res) {
         res.send(response);
     });
 });
-
-
 
 app.post("/search", function(req, res) {
     var response = {};
@@ -316,8 +315,8 @@ app.post("/control/supervisor/reporte/servicio", function(req, res) {
     response.data = [];
 
     //Cada '=?' es para ingresar un parámetro 
-    data = connection.query("SELECT CONCAT(P.apellidos,' ',P.nombres) as tecnico, COUNT(S.idServicio) as cantidad FROM PERSONA P INNER JOIN EMPLEADO E ON P.idPersona = E.idPersona INNER JOIN SERVICIO S ON S.idEmpleado=E.idEmpleado GROUP BY E.idEmpleado", function(error, rows, fields) {
-        if (!!error || rows.length < 1) {
+    data = connection.query("SELECT CONCAT(P.nombres,' ',P.apellidos) as tecnico, COUNT(S.idServicio) as cantidad FROM PERSONA P INNER JOIN EMPLEADO E ON P.idPersona = E.idPersona INNER JOIN SERVICIO S ON S.idEmpleado=E.idEmpleado GROUP BY E.idEmpleado", function(error, rows, fields) {
+        if (!!error) {
             response.error = error;
             console.log("Error in query");
         } else {
@@ -326,6 +325,30 @@ app.post("/control/supervisor/reporte/servicio", function(req, res) {
             for (var i = 0; i < rows.length; i++) {
                 //Agrega cada fila al array data de response
                 response.data.push({ tecnico: rows[i].tecnico, cantidad: rows[i].cantidad });
+            }
+        }
+        res.send(response);
+    });
+});
+
+app.post("/control/supervisor/reporte/equipos", function(req, res) {
+    var response = {};
+    response.code = "fail";
+    response.stadistics = {};
+    response.error = "";
+    response.data = [];
+
+    //Cada '=?' es para ingresar un parámetro 
+    data = connection.query("SELECT AE.Cantidad as cantidad, EQ.descripcion as descripcion from equipo EQ inner join abastecimientoequipo AE on AE.IdEquipo = EQ.id inner join abastecimiento AB on AB.idAbastecimiento = AE.idAbastecimiento inner join almacen A on A.idAlmacen = AB.idAlmacen WHERE A.IdEmpleado=?", [req.body.idEmpleado], function(error, rows, fields) {
+        if (!!error || rows.length < 1) {
+            response.error = error;
+            console.log("Error in query");
+        } else {
+            response.code = "ok";
+            console.log(rows.length);
+            for (var i = 0; i < rows.length; i++) {
+                //Agrega cada fila al array data de response
+                response.data.push({ cantidad: rows[i].cantidad, descripcion: rows[i].descripcion });
             }
         }
         res.send(response);
