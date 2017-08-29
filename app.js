@@ -21,6 +21,11 @@ var GCM = require('./gcm.js');
 var gcm = new GCM('AIzaSyCQYD3Npron6xO4PiaseIjKcGo1Mje9IXw');
 global.gcm = gcm;
 
+http.createServer(app).listen(app.get('port'), function(){
+   console.log('Express server listening on port ' + app.get('port'));
+});
+console.log("AQUI ESTOY");
+
 app.get("/", function(req, res) {
     var response = {};
     response.code = "fail";
@@ -42,10 +47,7 @@ app.get("/", function(req, res) {
     });
 });
 
-http.createServer(app).listen(app.get('port'), function(){
-   console.log('Express server listening on port ' + app.get('port'));
-});
-console.log("AQUI ESTOY");
+
 
 app.post("/search", function(req, res) {
     var response = {};
